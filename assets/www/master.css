@@ -23,6 +23,7 @@
     color:#666;
     font-family:Helvetica;
     font-size:72%;
+    overflow:hidden;
     line-height:1.5em;
     margin:0;
     border-top:1px solid #393939;

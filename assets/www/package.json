@@ -1,0 +1,10 @@
+{
+  "name": "rung",
+  "main": "index.html",
+  "window": {
+    "toolbar": false,
+	"scrollbar":false,
+    "width": 660,
+    "height": 800
+  }
+}
