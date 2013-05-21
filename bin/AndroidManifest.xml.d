@@ -1,2 +1,2 @@
-d:\rung\bin\AndroidManifest.xml : \
-d:\rung\AndroidManifest.xml \
+D:\rung5\bin\AndroidManifest.xml : \
+D:\rung5\AndroidManifest.xml \

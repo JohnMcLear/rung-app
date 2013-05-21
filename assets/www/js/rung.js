@@ -4,7 +4,6 @@
 */
 
 var app = navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry)/);
-// var app = true; // TODO remove me
 var step = 0; // token nasty globals
 var action = ""; // one for the money
 var option = ""; // two for the show..
@@ -48,10 +47,36 @@ var actions = {
   }
 };
 
+function cordovaReady() {
+  console.log("In device ready!");
+  
+  function win() {
+    console.log("Listening for NDEF tags");
+  }
+  
+  function fail() {
+    alert('Failed to register NFC Listener');
+  }
+  debug("Pre listener");
+  // nfc.addTagDiscoveredListener(writeTag, win, fail);
+  debug("Post listener");
+  debug(window.plugins);
+};
+
+
 $(document).ready(function(){
-  if(app){
+  debug("Document ready");
+  if(app){ // if its a mobile app
+    if(nfc){ // and the device has nfc support
+	  cordovaReady();
+	  debug("Nfc support enabled!");
+      // nfc.addTagDiscoveredListener(writeTag, writeSuccess, writeFailure);
+	}else{
+	  debug("No NFC support detected");
+	}
     showLandingPage();
-  }else{
+  }else{ // else its a desktop app
+    debug("Desktop or web app");
     addActions();
   }
   $("body").on('click', "#createNew", function(){
@@ -66,11 +91,14 @@ $(document).ready(function(){
   $('.option > .actionContents > form').submit(function(){
     debug("Option form submitted");
     showCompleted("option");
+	debug("is it a mobile app?");
+	debug(app);
 	if(app){ // if its the app already just write the damn tag..
-	  writeTag(JSON.stringify({ // todo, ensure cloning works
-        action: action,
-        option: option
-      }));
+	  debug("Writing the tag with action / options:");
+	  debug(action);
+	  debug(option);
+	  var tag = prepareTag(action, option);
+	  writeTag(tag);
 	}
 	if(!app){ // its the mobile site
       if(readCookie("appInstalled")){ // do we have a cookie to bypass the app step?
@@ -99,6 +127,7 @@ $(document).ready(function(){
   });
 
   $("body").on('click', ".finish", function(){
+    debug("Restarting");
     document.location.reload(true);
   });
   $("body").on('click', "#scan", function(){
@@ -259,13 +288,14 @@ function scan(){
       }
       */
       // document.getElementById("info").innerHTML = args.text;
-	  alert("Scanned QRCode, Hold your Rung to the NFC antenna on your device now then Press Ok..  Note: It's usually on the back");
+	  // alert("Scanned QRCode, Hold your Rung to the NFC antenna on your device now then Press Ok..  Note: It's usually on the back");
       writeTag(args.text);
     });
   } catch (ex) {
     debug(ex.text);
-	alert(ex.text);
-	writeTag(ex.text);
+	// alert(ex.text);
+	var tag = prepareTag(ex.text);
+	writeTag(tag);
   }
 }
 
@@ -276,7 +306,7 @@ function cloneTag(){
       var ndefMessage = tag.ndefMessage;
       // note: read code will need to decode
       // the payload from each record
-      alert(JSON.stringify(ndefMessage));
+      // alert(JSON.stringify(ndefMessage));
       writeTag(ndefMessage);
     }, 
     function () { // success callback
@@ -288,24 +318,31 @@ function cloneTag(){
   );
 }
 
-function writeTag(tag){
-  debug("Listening for a rung tag to which I will write"+tag);
-  nfc.addNdefListener (
-    function (nfcEvent) {
-    var ndefRecord = ndef.uriRecord(tag.text)
-    var ndefMessage = [];
-    ndefMessage.push();
+function prepareTag(action, option){
+  debug("Preparing Tag..");
+  debug(action);
+  debug(option);
+  if(action === "twitter"){ return "http://twitter.com/"+option };
+}
 
-    nfc.write(ndefMessage, writeSuccess(tag), writeFailure(tag)); // The actual write of the tag
-	
-	}, 
-    function () { // success callback
-      alert("Waiting for rung");
-    },
-    function (error) { // error callback
-      alert("Error adding NDEF listener " + JSON.stringify(error));
-    }
-  );
+function writeTag(tag){
+  debug("Listening for a rung tag to which I will write");
+  debug(ndef);
+  debug(tag);
+  var ndefRecord = ndef.uriRecord(tag); // support more types..
+  debug(ndefRecord);
+  // uncommenting below breaks functionality
+  /*
+  nfc.write( // from https://github.com/don/phonegap-nfc-writer/blob/master/assets/www/main.js
+        ndefRecord, 
+        function () {
+            navigator.notification.vibrate(100);
+        }, 
+        function (reason) {
+            navigator.notification.alert(reason, function() {}, "There was a problem");
+        }
+  );  
+  */
 }
 
 function writeSuccess(tag){
